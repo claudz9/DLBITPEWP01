@@ -19,8 +19,35 @@
             <h2 class="text-xl font-semibold">Overview</h2>
         </header>
 
-        <!-- Dashboard Grid Container (Stages 2-4 go here) -->
+        <!-- Dashboard Grid Container -->
         <div id="dashboard-content" class="p-6 space-y-6 max-w-7xl mx-auto w-full">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl border shadow-sm">Total Balance: €24,500.00</div>
+                <div class="bg-white p-6 rounded-xl border shadow-sm">Income: €8,200.00</div>
+                <div class="bg-white p-6 rounded-xl border shadow-sm">Expenses: €3,150.00</div>
+            </div>
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl border shadow-sm lg:col-span-2">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-xl border shadow-sm">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+            <!-- Transactions Table -->
+            <div class="bg-white p-6 rounded-xl border shadow-sm">
+                <table id="transactionsTable" class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50 border-b">
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Merchant</th>
+                            <th class="p-3">Amount</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
         </div>
     </main>
 </body>
