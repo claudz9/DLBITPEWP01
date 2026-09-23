@@ -1,0 +1,19 @@
+{
+  "name": "dlbitpewp01",
+  "version": "1.0.0",
+  "description": "A financial analytics dashboard to simulate a user-facing web application that helps users explore and understand their financial activity.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  }
+}
