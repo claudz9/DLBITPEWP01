@@ -40,10 +40,12 @@
             <div class="bg-white p-6 rounded-xl border shadow-sm">
                 <table id="transactionsTable" class="w-full text-left">
                     <thead>
-                        <tr class="bg-gray-50 border-b">
+                        <tr class="bg-gray-50 text-gray-600 text-sm border-b">
                             <th class="p-3">Date</th>
                             <th class="p-3">Merchant</th>
+                            <th class="p-3">Category</th>
                             <th class="p-3">Amount</th>
+                            <th class="p-3">Status</th>
                         </tr>
                     </thead>
                 </table>
@@ -97,6 +99,40 @@
             plugins: { legend: { position: 'bottom' } }
         }
     });
+    // 3. DataTables.js: Transaction Ledger (Dynamic API Fetch)
+    $(document).ready(function () {
+        $('#transactionsTable').DataTable({
+            ajax: 'http://localhost:3000/api/transactions', // Fetches JSON from your Express server
+            pageLength: 5,
+            lengthChange: false,
+            order: [[0, 'desc']], // Sort by date descending by default
+            columns: [
+                {
+                    data: 'date',
+                    render: function (data) {
+                        return new Date(data).toLocaleDateString(); // Format the timestamp
+                    }
+                },
+                { data: 'merchant' },
+                { data: 'category' },
+                {
+                    data: 'amount',
+                    render: function (data) {
+                        return '$' + parseFloat(data).toFixed(2);
+                    }
+                },
+                {
+                    data: 'status',
+                    render: function (data) {
+                        // Add Tailwind badge styling based on status
+                        const colorClass = data === 'cleared' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                        return `<span class="px-2 py-1 rounded-full text-xs font-medium ${colorClass}">${data}</span>`;
+                    }
+                }
+            ]
+        });
+    });
 </script>
+
 
 </html>
