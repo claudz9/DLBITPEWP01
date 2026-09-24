@@ -6,12 +6,12 @@ const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors()); // Allow cross-origin requests from your frontend
-app.use(express.json()); // Parse incoming JSON payloads
-app.use(express.static(__dirname));
+// Set up the app middleware so the server can handle browser requests and JSON payloads.
+app.use(cors()); // Allow the frontend to make requests to this API from a different origin.
+app.use(express.json()); // Read JSON bodies sent in incoming requests.
+app.use(express.static(__dirname)); // Serve the website files from this project folder.
 
-// PostgreSQL Database Connection Pool
+// Create a shared PostgreSQL connection pool so the app can reuse database connections efficiently.
 const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
@@ -20,7 +20,7 @@ const pool = new Pool({
     port: process.env.DB_PORT,
 });
 
-// Test Database Connection
+// Check that the database is reachable before the app starts handling requests.
 pool.connect((err, client, release) => {
     if (err) {
         return console.error('Error acquiring client', err.stack);
@@ -30,13 +30,13 @@ pool.connect((err, client, release) => {
 });
 
 // ----------------------------------------------------
-// API ROUTES
+// API routes
 // ----------------------------------------------------
 
-// Route 1: Get all transactions
+// Return every transaction, along with the linked category and account names.
 app.get('/api/transactions', async (req, res) => {
     try {
-        // A simple JOIN query to get the transaction details along with the category and account names
+        // Join the transactions table with the categories and accounts so the response is easier to read.
         const query = `
             SELECT 
                 t.id, 
@@ -54,7 +54,7 @@ app.get('/api/transactions', async (req, res) => {
 
         const { rows } = await pool.query(query);
 
-        // Wrap the rows in a 'data' object. DataTables.js expects this exact structure by default.
+        // Format the response in the structure that DataTables.js expects by default.
         res.json({ data: rows });
 
     } catch (err) {
@@ -63,7 +63,7 @@ app.get('/api/transactions', async (req, res) => {
     }
 });
 
-// Start the Server
+// Start the web server and listen for incoming requests.
 app.listen(port, () => {
     console.log(`Finance API is running on http://localhost:${port}`);
 });
