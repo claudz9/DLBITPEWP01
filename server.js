@@ -6,12 +6,12 @@ const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Set up the app middleware so the server can handle browser requests and JSON payloads.
-app.use(cors()); // Allow the frontend to make requests to this API from a different origin.
-app.use(express.json()); // Read JSON bodies sent in incoming requests.
-app.use(express.static(__dirname)); // Serve the website files from this project folder.
+// This sets up the app so it can handle browser requests and read JSON data.
+app.use(cors()); // Lets the frontend talk to this API even if it is running on a different port.
+app.use(express.json()); // Reads JSON data sent in requests.
+app.use(express.static(__dirname)); // Serves the website files from this project folder.
 
-// Create a shared PostgreSQL connection pool so the app can reuse database connections efficiently.
+// This creates a shared PostgreSQL connection pool so the app can reuse database connections.
 const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
@@ -20,7 +20,7 @@ const pool = new Pool({
     port: process.env.DB_PORT,
 });
 
-// Check that the database is reachable before the app starts handling requests.
+// Just checking that the database is reachable before the app starts serving requests.
 pool.connect((err, client, release) => {
     if (err) {
         return console.error('Error acquiring client', err.stack);
@@ -33,10 +33,10 @@ pool.connect((err, client, release) => {
 // API routes
 // ----------------------------------------------------
 
-// Return every transaction, along with the linked category and account names.
+// Get all transactions, along with the matching category and account names.
 app.get('/api/transactions', async (req, res) => {
     try {
-        // Join the transactions table with the categories and accounts so the response is easier to read.
+        // Pull the transaction details together with category and account info so the front end gets a clearer result.
         const query = `
             SELECT 
                 t.id, 
@@ -54,7 +54,7 @@ app.get('/api/transactions', async (req, res) => {
 
         const { rows } = await pool.query(query);
 
-        // Format the response in the structure that DataTables.js expects by default.
+        // Return the data in the format DataTables expects.
         res.json({ data: rows });
 
     } catch (err) {
@@ -63,7 +63,62 @@ app.get('/api/transactions', async (req, res) => {
     }
 });
 
-// Start the web server and listen for incoming requests.
+// This gets the spending by category for the doughnut chart.
+app.get('/api/summary/categories', async (req, res) => {
+    try {
+        const query = `
+            SELECT c.name AS category, SUM(t.amount) AS total
+            FROM TRANSACTIONS t
+            JOIN CATEGORIES c ON t.category_id = c.id
+            WHERE c.type = 'expense'
+            GROUP BY c.name;
+        `;
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error fetching category summary' });
+    }
+});
+
+// This gets the monthly cash flow for the line chart.
+app.get('/api/summary/cashflow', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                TO_CHAR(t.date, 'Mon') AS month,
+                EXTRACT(MONTH FROM t.date) AS month_num,
+                SUM(CASE WHEN c.type = 'income' THEN t.amount ELSE -t.amount END) AS net_balance
+            FROM TRANSACTIONS t
+            JOIN CATEGORIES c ON t.category_id = c.id
+            GROUP BY month, month_num
+            ORDER BY month_num ASC;
+        `;
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error fetching cash flow summary' });
+    }
+});
+// This gets the KPI numbers shown on the dashboard cards.
+app.get('/api/summary/kpi', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                (SELECT SUM(balance) FROM ACCOUNTS) AS total_balance,
+                (SELECT SUM(amount) FROM TRANSACTIONS t JOIN CATEGORIES c ON t.category_id = c.id WHERE c.type = 'income' AND EXTRACT(MONTH FROM t.date) = EXTRACT(MONTH FROM CURRENT_DATE)) AS monthly_income,
+                (SELECT SUM(amount) FROM TRANSACTIONS t JOIN CATEGORIES c ON t.category_id = c.id WHERE c.type = 'expense' AND EXTRACT(MONTH FROM t.date) = EXTRACT(MONTH FROM CURRENT_DATE)) AS monthly_expenses
+        `;
+        const { rows } = await pool.query(query);
+        res.json(rows[0]); // Send back the single row with the totals.
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error fetching KPIs' });
+    }
+});
+
+// Start the server so the dashboard can talk to it.
 app.listen(port, () => {
     console.log(`Finance API is running on http://localhost:${port}`);
 });

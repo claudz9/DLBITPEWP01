@@ -8,26 +8,35 @@
 </head>
 
 <body class="bg-gray-50 flex h-screen overflow-hidden">
-    <!-- Left-hand navigation panel -->
+    <!-- This is the sidebar on the left -->
     <aside class="w-64 bg-white border-r hidden md:flex flex-col p-6">
         <h1 class="text-2xl font-bold text-blue-600">Finance Dashboard</h1>
     </aside>
 
-    <!-- Main area for the dashboard overview -->
+    <!-- This is the main section where the dashboard content sits -->
     <main class="flex-1 flex flex-col overflow-y-auto">
         <header class="bg-white border-b p-6 flex justify-between">
             <h2 class="text-xl font-semibold">Overview</h2>
         </header>
 
-        <!-- Main dashboard content area -->
+        <!-- The main dashboard area where the cards, charts, and table live -->
         <div id="dashboard-content" class="p-6 space-y-6 max-w-7xl mx-auto w-full">
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl border shadow-sm">Total Balance: €24,500.00</div>
-                <div class="bg-white p-6 rounded-xl border shadow-sm">Income: €8,200.00</div>
-                <div class="bg-white p-6 rounded-xl border shadow-sm">Expenses: €3,150.00</div>
+                <div class="bg-white p-6 rounded-xl border shadow-sm">
+                    <p class="text-sm text-gray-500 mb-1">Total Balance</p>
+                    <h3 id="kpi-balance" class="text-3xl font-bold">€0.00</h3>
+                </div>
+                <div class="bg-white p-6 rounded-xl border shadow-sm">
+                    <p class="text-sm text-gray-500 mb-1">Monthly Income</p>
+                    <h3 id="kpi-income" class="text-3xl font-bold text-green-600">+€0.00</h3>
+                </div>
+                <div class="bg-white p-6 rounded-xl border shadow-sm">
+                    <p class="text-sm text-gray-500 mb-1">Monthly Expenses</p>
+                    <h3 id="kpi-expenses" class="text-3xl font-bold text-red-500">-€0.00</h3>
+                </div>
             </div>
-            <!-- Charts for the financial overview -->
+            <!-- These charts give a quick view of money coming in and going out -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-white p-6 rounded-xl border shadow-sm lg:col-span-2">
                     <canvas id="cashFlowChart"></canvas>
@@ -36,7 +45,7 @@
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
-            <!-- Recent transactions list -->
+            <!-- This is the table showing recent transactions -->
             <div class="bg-white p-6 rounded-xl border shadow-sm">
                 <table id="transactionsTable" class="w-full text-left">
                     <thead>
@@ -53,59 +62,82 @@
         </div>
     </main>
 
-    <!-- Third-party libraries used by the dashboard -->
+    <!-- These are the library files the dashboard needs to work -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        // Line chart showing how the balance changes over time.
-        const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
-        new Chart(cashFlowCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{
-                    label: 'Net Balance',
-                    data: [1200, 1900, 1500, 2200, 1800, 2500],
-                    borderColor: '#3b82f6', // Tailwind blue-500
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4 // Creates smooth curves
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
+        // This chart shows how the balance changes over time.
+        fetch('http://localhost:3000/api/summary/cashflow')
+            .then(response => response.json())
+            .then(data => {
+                const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+                new Chart(cashFlowCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(row => row.month), // Extracts the 'Mon' string from SQL
+                        datasets: [{
+                            label: 'Net Balance',
+                            data: data.map(row => parseFloat(row.net_balance)), // Extracts the calculated sum
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            })
+            .catch(err => console.error('Error loading cash flow data:', err));
 
-        // Doughnut chart showing how spending is split across categories.
-        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-        new Chart(categoryCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Housing', 'Food', 'Transport', 'Utilities'],
-                datasets: [{
-                    data: [1200, 600, 300, 250],
-                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6366f1'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '70%', // Makes it a thin doughnut
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
+        // This donut chart shows where the spending is going.
+        fetch('http://localhost:3000/api/summary/categories')
+            .then(response => response.json())
+            .then(data => {
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.map(row => row.category), // Extracts the category name
+                        datasets: [{
+                            data: data.map(row => parseFloat(row.total)), // Extracts the aggregated amount
+                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        cutout: '70%',
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            })
+            .catch(err => console.error('Error loading category data:', err));
 
-        // Data table that loads transaction data from the backend API.
+        // This loads the KPI cards with the latest totals.
+        fetch('http://localhost:3000/api/summary/kpi')
+            .then(response => response.json())
+            .then(data => {
+                // Format the numbers with commas and 2 decimal places
+                const formatCurrency = (val) => parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                document.getElementById('kpi-balance').innerText = '€' + formatCurrency(data.total_balance);
+                document.getElementById('kpi-income').innerText = '+€' + formatCurrency(data.monthly_income);
+                document.getElementById('kpi-expenses').innerText = '-€' + formatCurrency(data.monthly_expenses);
+            })
+            .catch(err => console.error('Error loading KPIs:', err));
+
+        // This table pulls the latest transactions from the backend.
         $(document).ready(function () {
             $('#transactionsTable').DataTable({
                 ajax: {
-                    url: 'http://localhost:3000/api/transactions', // Use the absolute backend URL so the table can fetch live data.
+                    url: 'http://localhost:3000/api/transactions', // Use the backend URL so the table can fetch live data.
                     error: function (xhr) {
                         console.error('Transactions API failed:', xhr.status, xhr.responseText);
                     }
