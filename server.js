@@ -81,6 +81,28 @@ app.get('/api/summary/categories', async (req, res) => {
     }
 });
 
+// This gets the monthly income and spending totals for the analytics charts.
+app.get('/api/summary/monthly', async (req, res) => {
+    try {
+        const query = `
+            SELECT
+                TO_CHAR(DATE_TRUNC('month', t.date), 'Mon YYYY') AS month,
+                DATE_TRUNC('month', t.date) AS month_date,
+                COALESCE(SUM(CASE WHEN c.type = 'income' THEN t.amount ELSE 0 END), 0) AS income,
+                COALESCE(SUM(CASE WHEN c.type = 'expense' THEN t.amount ELSE 0 END), 0) AS expense
+            FROM TRANSACTIONS t
+            JOIN CATEGORIES c ON t.category_id = c.id
+            GROUP BY month_date
+            ORDER BY month_date ASC;
+        `;
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error fetching monthly summary' });
+    }
+});
+
 // This gets the monthly cash flow for the line chart.
 app.get('/api/summary/cashflow', async (req, res) => {
     try {
