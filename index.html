@@ -11,6 +11,15 @@
     <!-- This is the sidebar on the left -->
     <aside class="w-64 bg-white border-r hidden md:flex flex-col p-6">
         <h1 class="text-2xl font-bold text-blue-600">Finance Dashboard</h1>
+        <nav class="mt-8 flex-1 space-y-2">
+            <a href="index.html"
+                class="block px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Dashboard
+                Overview</a>
+            <a href="transactions.html"
+                class="block px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Transactions</a>
+            <a href="analytics.html"
+                class="block px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Analytics</a>
+        </nav>
     </aside>
 
     <!-- This is the main section where the dashboard content sits -->
@@ -68,88 +77,88 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        // This chart shows how the balance changes over time.
-        fetch('http://localhost:3000/api/summary/cashflow')
-            .then(response => response.json())
-            .then(data => {
-                const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
-                new Chart(cashFlowCtx, {
-                    type: 'line',
-                    data: {
-                        labels: data.map(row => row.month), // Extracts the 'Mon' string from SQL
-                        datasets: [{
-                            label: 'Net Balance',
-                            data: data.map(row => parseFloat(row.net_balance)), // Extracts the calculated sum
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            })
-            .catch(err => console.error('Error loading cash flow data:', err));
-
-        // This donut chart shows where the spending is going.
-        fetch('http://localhost:3000/api/summary/categories')
-            .then(response => response.json())
-            .then(data => {
-                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-                new Chart(categoryCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: data.map(row => row.category), // Extracts the category name
-                        datasets: [{
-                            data: data.map(row => parseFloat(row.total)), // Extracts the aggregated amount
-                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        cutout: '70%',
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
-            })
-            .catch(err => console.error('Error loading category data:', err));
-
-        // This loads the KPI cards with the latest totals.
-        fetch('http://localhost:3000/api/summary/kpi')
-            .then(response => response.json())
-            .then(data => {
-                // Format the numbers with commas and 2 decimal places
-                const formatCurrency = (val) => parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                document.getElementById('kpi-balance').innerText = '€' + formatCurrency(data.total_balance);
-                document.getElementById('kpi-income').innerText = '+€' + formatCurrency(data.monthly_income);
-                document.getElementById('kpi-expenses').innerText = '-€' + formatCurrency(data.monthly_expenses);
-            })
-            .catch(err => console.error('Error loading KPIs:', err));
-
-        // This table pulls the latest transactions from the backend.
         $(document).ready(function () {
+
+            // 1. Chart.js: Cash Flow Line Chart
+            fetch('/api/summary/cashflow')
+                .then(response => response.json())
+                .then(data => {
+                    const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+                    new Chart(cashFlowCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.map(row => row.month),
+                            datasets: [{
+                                label: 'Net Balance',
+                                data: data.map(row => parseFloat(row.net_balance)),
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                })
+                .catch(err => console.error('Error loading cash flow data:', err));
+
+            // 2. Chart.js: Category Spending Doughnut Chart
+            fetch('/api/summary/categories')
+                .then(response => response.json())
+                .then(data => {
+                    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                    new Chart(categoryCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.map(row => row.category),
+                            datasets: [{
+                                data: data.map(row => parseFloat(row.total)),
+                                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            cutout: '70%',
+                            plugins: { legend: { position: 'bottom' } }
+                        }
+                    });
+                })
+                .catch(err => console.error('Error loading category data:', err));
+
+            // 3. Load KPI Cards
+            fetch('/api/summary/kpi')
+                .then(response => response.json())
+                .then(data => {
+                    const formatCurrency = (val) => parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    document.getElementById('kpi-balance').innerText = '€' + formatCurrency(data.total_balance);
+                    document.getElementById('kpi-income').innerText = '+€' + formatCurrency(data.monthly_income);
+                    document.getElementById('kpi-expenses').innerText = '-€' + formatCurrency(data.monthly_expenses);
+                })
+                .catch(err => console.error('Error loading KPIs:', err));
+
+            // 4. DataTables.js: Transaction Ledger
             $('#transactionsTable').DataTable({
                 ajax: {
-                    url: 'http://localhost:3000/api/transactions', // Use the backend URL so the table can fetch live data.
+                    url: '/api/transactions', // Switched to relative URL
                     error: function (xhr) {
                         console.error('Transactions API failed:', xhr.status, xhr.responseText);
                     }
                 },
                 pageLength: 5,
                 lengthChange: false,
-                order: [[0, 'desc']], // Show the newest transactions first.
+                order: [[0, 'desc']],
                 columns: [
                     {
                         data: 'date',
                         render: function (data) {
-                            return new Date(data).toLocaleDateString(); // Convert the raw date into something readable.
+                            return new Date(data).toLocaleDateString();
                         }
                     },
                     { data: 'merchant' },
@@ -157,13 +166,12 @@
                     {
                         data: 'amount',
                         render: function (data) {
-                            return '€' + parseFloat(data).toFixed(2); // Format the amount in euros.
+                            return '€' + parseFloat(data).toFixed(2);
                         }
                     },
                     {
                         data: 'status',
                         render: function (data) {
-                            // Give each transaction status a matching badge color.
                             const colorClass = data === 'cleared' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
                             return `<span class="px-2 py-1 rounded-full text-xs font-medium ${colorClass}">${data}</span>`;
                         }
