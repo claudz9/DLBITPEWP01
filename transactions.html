@@ -50,7 +50,7 @@
     <main class="flex-1 flex flex-col overflow-y-auto">
         <header class="bg-white border-b p-6 flex justify-between items-center shadow-sm">
             <h2 class="text-xl font-semibold">Transaction Ledger</h2>
-            <button
+            <button id="openModalBtn"
                 class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                 + Add Transaction
             </button>
@@ -79,6 +79,60 @@
             </div>
         </div>
     </main>
+
+    <!-- Add transaction modal -->
+    <div id="transactionModal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">Add New Transaction</h3>
+
+            <form id="addTransactionForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="t-date" required
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Merchant</label>
+                    <input type="text" id="t-merchant" required placeholder="e.g., Librería"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Amount (€)</label>
+                    <input type="number" step="0.01" id="t-amount" required placeholder="0.00"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Account</label>
+                        <select id="t-account"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <option value="1">Main Checking</option>
+                            <option value="2">Travel Rewards Visa</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Category</label>
+                        <select id="t-category"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <option value="1">Auto & Transport</option>
+                            <option value="2">Education</option>
+                            <option value="3">Family & Baby</option>
+                            <option value="5">Travel & Vacation</option>
+                            <option value="7">Shopping & Electronics</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="closeModalBtn"
+                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Save
+                        Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -122,6 +176,58 @@
                     }
                 ]
             });
+        });
+
+        // Handle the add-transaction form and update the table without reloading.
+
+        const modal = document.getElementById('transactionModal');
+        const openBtn = document.getElementById('openModalBtn');
+        const closeBtn = document.getElementById('closeModalBtn');
+        const form = document.getElementById('addTransactionForm');
+
+        // Open and close the form.
+        openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            form.reset(); // Clear inputs if user cancels
+        });
+
+        // Submit the transaction without reloading the page.
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // CRITICAL: Stops the browser from refreshing the page
+
+            // Build the request from the form values.
+            const newTransaction = {
+                date: document.getElementById('t-date').value,
+                merchant: document.getElementById('t-merchant').value,
+                amount: parseFloat(document.getElementById('t-amount').value),
+                account_id: parseInt(document.getElementById('t-account').value),
+                category_id: parseInt(document.getElementById('t-category').value),
+                status: 'cleared'
+            };
+
+            // Send async POST request to the API
+            fetch('/api/transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newTransaction)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    // Success Workflow:
+                    modal.classList.add('hidden'); // Hide modal
+                    form.reset(); // Clear form
+
+                    // Refresh the table and keep the current page.
+                    $('#fullTransactionsTable').DataTable().ajax.reload(null, false);
+                })
+                .catch(err => {
+                    console.error('Error adding transaction via AJAX:', err);
+                    alert('Failed to save transaction. Check the console.');
+                });
         });
     </script>
 </body>
