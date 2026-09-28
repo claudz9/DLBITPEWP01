@@ -63,6 +63,26 @@ app.get('/api/transactions', async (req, res) => {
     }
 });
 
+// Add a transaction.
+app.post('/api/transactions', async (req, res) => {
+    try {
+        const { date, merchant, amount, status, category_id, account_id } = req.body;
+
+        const query = `
+            INSERT INTO TRANSACTIONS (date, merchant, amount, status, category_id, account_id)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *;
+        `;
+        const values = [date, merchant, amount, status, category_id, account_id];
+
+        const { rows } = await pool.query(query, values);
+        res.status(201).json(rows[0]); // Return the newly created transaction
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error while adding transaction' });
+    }
+});
+
 // This gets the spending by category for the doughnut chart.
 app.get('/api/summary/categories', async (req, res) => {
     try {
@@ -103,7 +123,7 @@ app.get('/api/summary/monthly', async (req, res) => {
     }
 });
 
-// This gets the monthly cash flow for the line chart.
+// Get monthly cash flow for the line chart.
 app.get('/api/summary/cashflow', async (req, res) => {
     try {
         const query = `
@@ -123,7 +143,7 @@ app.get('/api/summary/cashflow', async (req, res) => {
         res.status(500).json({ error: 'Server error fetching cash flow summary' });
     }
 });
-// This gets the KPI numbers shown on the dashboard cards.
+// Get the totals shown on the dashboard cards.
 app.get('/api/summary/kpi', async (req, res) => {
     try {
         const query = `
