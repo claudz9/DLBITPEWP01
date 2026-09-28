@@ -9,7 +9,7 @@
 </head>
 
 <body class="bg-gray-50 flex h-screen overflow-hidden">
-    <!-- Sidebar -->
+    <!-- Sidebar navigation -->
     <aside class="w-64 bg-white border-r hidden md:flex flex-col p-6">
         <h1 class="text-2xl font-bold text-blue-600">Finance Dashboard</h1>
         <nav class="mt-8 flex-1 space-y-2">
@@ -58,19 +58,19 @@
         </div>
     </main>
 
-    <!-- Dependencies -->
+    <!-- Chart libraries -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         $(document).ready(function () {
 
-            // Helper function to format currency in tooltips and axes
+            // Format chart values as currency.
             const currencyFormatter = (value) => {
                 return '€' + parseFloat(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             };
 
-            // Common Tooltip Configuration for clarity
+            // Shared tooltip settings for the charts.
             const tooltipConfig = {
                 callbacks: {
                     label: function (context) {
@@ -83,7 +83,7 @@
                 }
             };
 
-            // 1. Fetch Monthly Data for Bar and Line Charts
+            // Load monthly totals for the charts.
             fetch('/api/summary/monthly')
                 .then(response => response.json())
                 .then(data => {
@@ -91,7 +91,7 @@
                     const incomes = data.map(row => parseFloat(row.income));
                     const expenses = data.map(row => parseFloat(row.expense));
 
-                    // --- BAR CHART (Income vs Expense) ---
+                    // Compare income and expenses by month.
                     new Chart(document.getElementById('barChart').getContext('2d'), {
                         type: 'bar',
                         data: {
@@ -123,7 +123,7 @@
                         }
                     });
 
-                    // --- LINE CHART (Spending Trends) ---
+                    // Show how spending changes over time.
                     new Chart(document.getElementById('lineChart').getContext('2d'), {
                         type: 'line',
                         data: {
@@ -153,12 +153,12 @@
                 })
                 .catch(err => console.error('Error loading monthly data:', err));
 
-            // 2. Fetch Category Data for Pie Chart
+            // Load totals for the category chart.
             fetch('/api/summary/categories')
                 .then(response => response.json())
                 .then(data => {
                     new Chart(document.getElementById('pieChart').getContext('2d'), {
-                        type: 'pie', // Changed from doughnut to pie per requirements
+                        type: 'pie',
                         data: {
                             labels: data.map(row => row.category),
                             datasets: [{
