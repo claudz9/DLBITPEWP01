@@ -79,7 +79,7 @@
     <script>
         $(document).ready(function () {
 
-            // 1. Chart.js: Cash Flow Line Chart
+            // Show monthly cash flow.
             fetch('/api/summary/cashflow')
                 .then(response => response.json())
                 .then(data => {
@@ -107,7 +107,7 @@
                 })
                 .catch(err => console.error('Error loading cash flow data:', err));
 
-            // 2. Chart.js: Category Spending Doughnut Chart
+            // Show spending by category.
             fetch('/api/summary/categories')
                 .then(response => response.json())
                 .then(data => {
@@ -131,7 +131,7 @@
                 })
                 .catch(err => console.error('Error loading category data:', err));
 
-            // 3. Load KPI Cards
+            // Fill in the summary cards.
             fetch('/api/summary/kpi')
                 .then(response => response.json())
                 .then(data => {
@@ -143,10 +143,10 @@
                 })
                 .catch(err => console.error('Error loading KPIs:', err));
 
-            // 4. DataTables.js: Transaction Ledger
+            // Load the recent transactions table.
             $('#transactionsTable').DataTable({
                 ajax: {
-                    url: '/api/transactions', // Switched to relative URL
+                    url: '/api/transactions', // Use the API on this server.
                     error: function (xhr) {
                         console.error('Transactions API failed:', xhr.status, xhr.responseText);
                     }
