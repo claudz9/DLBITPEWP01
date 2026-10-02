@@ -89,15 +89,42 @@ router.get('/transactions', async (req, res) => {
 
 router.post('/transactions', async (req, res) => {
     try {
-        const { date, merchant, amount, status, account_id, category_id } = req.body;
+        let { date, merchant, amount, status, account_id, category_id } = req.body;
+
+        //check for missing fields
+        if (!date || !merchant || amount == undefined || !account_id || !category_id) {
+            return res.status(400).json({ error: 'All fields (date, merchant, amount, account, category) are required' });
+        }
+
+        // sanitize and validate text ( remove accidental spaces, check length)
+        merchant = merchant.trim();
+        if (merchant.length === 0) {
+            return res.status(400).json({ error: 'Merchant name cannot be empty.' });
+        }
+
+        // validate numbers ( ensure amount is valid positive number)
+        const numericAmount = parseFloat(amount);
+        if (isNaN(numericAmount) || numericAmount <= 0) {
+            return res.status(400).json({ error: 'Amount must be a valid positive number.' });
+        }
+
+        // validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            return res.status(400).json({ error: 'Date must be in YYYY-MM-DD format.' });
+        }
+
+        // if it passes all security checks, insert into database
         const query = `
-            INSERT INTO TRANSACTIONS (date, merchant, amount, status, account_id, category_id) 
+            INSERT INTO TRANSACTIONS (date, merchant, amount, status, account_id, category_id)
             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
         `;
-        const values = [date, merchant, amount, status || 'cleared', account_id, category_id];
+        const values = [date, merchant, numericAmount, status || 'cleared', account_id, category_id];
+
         const { rows } = await pool.query(query, values);
         res.status(201).json(rows[0]);
     } catch (err) {
+        console.error(err.message);
         res.status(500).json({ error: 'Server error while adding transaction' });
     }
 });
