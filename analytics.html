@@ -163,15 +163,32 @@
                             labels: data.map(row => row.category),
                             datasets: [{
                                 data: data.map(row => parseFloat(row.total)),
-                                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6'],
-                                borderAlign: 'inner'
+                                backgroundColor: [
+                                    'rgba(239, 68, 68, 0.85)',  // Red
+                                    'rgba(245, 158, 11, 0.85)', // Amber
+                                    'rgba(16, 185, 129, 0.85)', // Emerald
+                                    'rgba(99, 102, 241, 0.85)', // Indigo
+                                    'rgba(139, 92, 246, 0.85)'  // Violet
+                                ],
+                                borderColor: '#ffffff',
+                                borderWidth: 2,
+                                hoverOffset: 12 // Makes the slice pop out on hover for better visibility.
                             }]
                         },
                         options: {
                             responsive: true,
                             plugins: {
-                                tooltip: tooltipConfig,
-                                legend: { position: 'right' }
+                                tooltip: {
+                                    ...tooltipConfig.callbacks,
+                                    backgroundColor: 'rgba(12, 24, 39, 0.9)',
+                                    padding: 12,
+                                    titleFont: { size: 14, family: "'Inter', sans-serif" },
+                                    bodyFont: { size: 13, family: "'Inter', sans-serif" }
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { font: { family: "'Inter', sans-serif", size: 12 } }
+                                }
                             }
                         }
                     });
