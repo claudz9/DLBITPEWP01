@@ -6,27 +6,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transactions - Finance Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <style>
-        /* Tailwind fixes for DataTables default inputs */
-        .dataTables_wrapper .dataTables_filter input {
-            border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
-            padding: 0.25rem 0.5rem;
-            margin-bottom: 1rem;
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Force DataTables inputs to use Tailwind styling */
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            margin-bottom: 1.25rem;
+            margin-left: 0.5rem;
             outline: none;
+            background-color: #f9fafb;
         }
 
         .dataTables_wrapper .dataTables_filter input:focus {
             border-color: #3b82f6;
-            box-shadow: 0 0 0 1px #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
 
-        .dataTables_wrapper .dataTables_length select {
-            border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
-            padding: 0.25rem;
-            margin-bottom: 1rem;
+        /* Table Row Hover Effects */
+        table.dataTable tbody tr {
+            border-bottom: 1px solid #f3f4f6 !important;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        table.dataTable tbody tr:hover {
+            background-color: #f8fafc !important;
+        }
+
+        /* Pagination Button Styling */
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 0.5rem !important;
+            border: 1px solid #e5e7eb !important;
+            background: white !important;
+            margin-left: 0.375rem;
+            padding: 0.375rem 0.75rem !important;
+            color: #374151 !important;
+            transition: all 0.2s;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f3f4f6 !important;
+            color: #111827 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #eff6ff !important;
+            border-color: #3b82f6 !important;
+            color: #1d4ed8 !important;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -82,8 +121,8 @@
 
     <!-- Add transaction modal -->
     <div id="transactionModal"
-        class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 transition-opacity">
-        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center z-50 transition-all duration-300 opacity-0 scale-95">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
             <h3 class="text-xl font-semibold mb-4 text-gray-800">Add New Transaction</h3>
 
             <form id="addTransactionForm" class="space-y-4">
@@ -186,10 +225,14 @@
         const form = document.getElementById('addTransactionForm');
 
         // Open and close the form.
-        openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+        openBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0', 'scale-95'), 10); // Slight delay triggers the CSS transition
+        });
+
         closeBtn.addEventListener('click', () => {
-            modal.classList.add('hidden');
-            form.reset(); // Clear inputs if user cancels
+            modal.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); form.reset(); }, 300); // Wait for transition to finish before hiding
         });
 
         // Submit the transaction without reloading the page.
