@@ -73,6 +73,39 @@ router.get('/summary/cashflow', async (req, res) => {
         res.status(500).json({ error: 'Server error fetching cash flow summary' });
     }
 });
+// --- User Authentication Routes ---
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        //check if user exists
+        const userQuery = 'SELECT id, name, email, password FROM USERS WHERE email = $1';
+        const { rows } = await pool.query(userQuery, [email]);
+
+        if (rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const user = rows[0];
+
+        // verify password (prototype logic - not hasehd for simplicity)
+        if (password !== user.password) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // return user data (excluding password)
+        res.status(200).json({
+            message: 'Login successful',
+            user: {
+                id: user.id, name: user.name, email: user.email
+            }
+        });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Server error during login' });
+    }
+});
+
 
 // --- Transaction Routes ---
 router.get('/transactions', async (req, res) => {
