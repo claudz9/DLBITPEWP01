@@ -1,0 +1,41 @@
+CREATE TABLE USERS (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL 
+);
+
+CREATE TABLE ACCOUNTS (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    balance DECIMAL(10, 2) DEFAULT 0.00
+);
+
+CREATE TABLE CATEGORIES (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL -- 'income' or 'expense'
+);
+
+CREATE TABLE BUDGETS (
+    id SERIAL PRIMARY KEY,
+    amount DECIMAL(10, 2) NOT NULL,
+    period VARCHAR(50) DEFAULT 'monthly',
+    category_id INT REFERENCES CATEGORIES(id)
+);
+
+CREATE TABLE TRANSACTIONS (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    merchant TEXT NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'cleared',
+    account_id INT REFERENCES ACCOUNTS(id),
+    category_id INT REFERENCES CATEGORIES(id),
+    user_id INT DEFAULT 1 REFERENCES USERS(id)
+);
+
+
+CREATE INDEX idx_transactions_date ON TRANSACTIONS(date);
+CREATE INDEX idx_transactions_category ON TRANSACTIONS(category_id);
