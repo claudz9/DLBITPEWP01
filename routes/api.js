@@ -13,8 +13,8 @@ router.get('/summary/kpi', async (req, res) => {
         const query = `
             SELECT 
                 (SELECT SUM(balance) FROM ACCOUNTS) AS total_balance,
-                (SELECT SUM(amount) FROM TRANSACTIONS t JOIN CATEGORIES c ON t.category_id = c.id WHERE c.type = 'income' AND EXTRACT(MONTH FROM t.date) = EXTRACT(MONTH FROM CURRENT_DATE)) AS monthly_income,
-                (SELECT SUM(amount) FROM TRANSACTIONS t JOIN CATEGORIES c ON t.category_id = c.id WHERE c.type = 'expense' AND EXTRACT(MONTH FROM t.date) = EXTRACT(MONTH FROM CURRENT_DATE)) AS monthly_expenses
+                (SELECT COALESCE(SUM(t.amount), 0) FROM TRANSACTIONS t JOIN CATEGORIES c ON t.category_id = c.id WHERE c.type = 'income' AND t.date >= DATE_TRUNC('month', CURRENT_DATE)::date AND t.date < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')::date) AS monthly_income,
+                (SELECT COALESCE(SUM(t.amount), 0) FROM TRANSACTIONS t JOIN CATEGORIES c ON t.category_id = c.id WHERE c.type = 'expense' AND t.date >= DATE_TRUNC('month', CURRENT_DATE)::date AND t.date < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')::date) AS monthly_expenses
         `;
         const { rows } = await pool.query(query);
         res.json(rows[0]);
@@ -106,6 +106,47 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// --- Budgets Routes ---
+router.get('/budget-categories', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT id, name
+            FROM CATEGORIES
+            WHERE type = 'expense'
+            ORDER BY name
+        `);
+        res.status(200).json(rows);
+    } catch (err) {
+        console.error('Error fetching budget categories:', err);
+        res.status(500).json({ error: 'Server error while fetching budget categories' });
+    }
+});
+
+router.get('/budgets', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT b.*, c.name AS category
+            FROM BUDGETS b
+            LEFT JOIN CATEGORIES c ON b.category_id = c.id
+        `);
+        res.status(200).json(rows);
+    } catch (err) {
+        console.error('Error fetching budgets:', err);
+        res.status(500).json({ error: 'Server error while fetching budgets' });
+    }
+});
+
+router.post('/budgets', async (req, res) => {
+    try {
+        const { amount, period, category_id } = req.body;
+        const query = 'INSERT INTO BUDGETS (amount, period, category_id) VALUES ($1, $2, $3) RETURNING *';
+        const { rows } = await pool.query(query, [amount, period || 'monthly', category_id]);
+        res.status(201).json({ message: 'Budget created successfully', budget: rows[0] });
+    } catch (err) {
+        console.error('Error creating budget:', err);
+        res.status(500).json({ error: 'Server error while creating budget' });
+    }
+});
 
 // --- Transaction Routes ---
 router.get('/transactions', async (req, res) => {
